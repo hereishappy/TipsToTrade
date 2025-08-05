@@ -1,29 +1,23 @@
+import os
+from telegram import Bot
+from flask import Flask
+import time
 import yfinance as yf
 import pandas as pd
 import ta
-from telegram import Bot
 from datetime import datetime
-import time
-from flask import Flask
 import threading
-import os
 
-# ✅ Securely fetch token and chat ID from environment
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+bot = Bot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-# ✅ Telegram Bot Setup
-bot = Bot(token=TOKEN)
-
-# ✅ Market Index Tickers
 TICKERS = {
     "NIFTY 50": "^NSEI",
     "BANKNIFTY": "^NSEBANK",
-    "FINNIFTY": "^NSEFIN",     # Usually correct for FinNifty (else use yfinance symbol search)
+    "FINNIFTY": "^NSEFIN",
     "SENSEX": "^BSESN"
 }
 
-# ✅ Market Analysis Function
 def analyze_market(name, symbol):
     try:
         df = yf.download(symbol, period="1d", interval="5m", progress=False)
@@ -40,7 +34,6 @@ def analyze_market(name, symbol):
         vwap = latest['VWAP']
         now = datetime.now().strftime('%H:%M:%S')
 
-        # Signal Generation
         if rsi > 60 and price > vwap:
             message = f"🚀 *BUY ALERT - {name} CE*\n🕒 {now}\n📈 RSI: {int(rsi)}\n💰 Price: ₹{round(price)}\n🎯 Target: ₹90 | 🛑 SL: ₹35"
         elif rsi < 40 and price < vwap:
@@ -48,30 +41,26 @@ def analyze_market(name, symbol):
         else:
             message = f"⚠️ *NO TRADE ZONE - {name}*\n🕒 {now}\nRSI: {int(rsi)} | Price: ₹{round(price)}\nReason: Weak or Sideways"
 
-        # Send to Telegram
         bot.send_message(chat_id=CHAT_ID, text=message, parse_mode='Markdown')
         print(f"✅ Sent: {message}")
-    
     except Exception as e:
-        error_msg = f"❌ Error while analyzing {name}: {str(e)}"
-        print(error_msg)
-        bot.send_message(chat_id=CHAT_ID, text=error_msg)
+        bot.send_message(chat_id=CHAT_ID, text=f"❌ Error: {str(e)}")
+        print(f"❌ Error: {e}")
 
-# ✅ Flask Server to Keep Alive (for Replit/UptimeRobot)
+# Flask server for Render
 app = Flask('')
 @app.route('/')
 def home():
-    return "💡 Trading Bot is Running!"
+    return "Bot is Alive"
 
-def run_server():
+def run():
     app.run(host='0.0.0.0', port=8080)
 
-threading.Thread(target=run_server).start()
+t = threading.Thread(target=run)
+t.start()
 
-# ✅ Main Loop - runs every 5 mins
+# Main loop
 while True:
-    print("🔍 Market Scan Started...")
     for name, symbol in TICKERS.items():
         analyze_market(name, symbol)
-    print("🛌 Sleeping for 5 mins...\n")
     time.sleep(300)
