@@ -6,8 +6,8 @@ from datetime import datetime
 import os
 
 # Correct way to load environment variables
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+TOKEN = os.getenv(8423358482:AAGB9R8CnDayqOhnr3fBbeGFQWu40I5SpL0)
+CHAT_ID = os.getenv(6251267218)
 
 if not TOKEN or not CHAT_ID:
     raise ValueError("Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID environment variables")
